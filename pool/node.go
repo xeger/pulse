@@ -561,8 +561,10 @@ func (node *Node) manageWorkers() {
 	for {
 		select {
 		case <-c:
+			fmt.Printf(">>> pulse.Node.manageWorkers> RECV\n")
 			node.handleWorkerMapUpdate(ctx)
 		case <-node.stop:
+			fmt.Printf(">>> pulse.Node.manageWorkers> STOP\n")
 			return
 		}
 	}
@@ -573,9 +575,11 @@ func (node *Node) handleWorkerMapUpdate(ctx context.Context) {
 	node.lock.Lock()
 	defer node.lock.Unlock()
 	if node.closing || node.shuttingDown {
+		fmt.Printf(">>> pulse.Node.handleWorkerMapUpdate> early return (closing || shuttingDown)\n")
 		return
 	}
 	activeIDs := node.activeWorkers(ctx)
+	fmt.Printf(">>> pulse.Node.handleWorkerMapUpdate> len(activeIDs)=%d\n", len(activeIDs))
 	if len(activeIDs) == 0 {
 		return
 	}
@@ -603,6 +607,7 @@ func (node *Node) rebalanceWorker(ctx context.Context, worker *Worker, activeIDs
 			continue
 		}
 		delete(worker.jobs, job.Key)
+		fmt.Printf(">>> pulse.Node.rebalanceWorker> %s\n", job.Key)
 		if _, err := node.poolStream.Add(ctx, evStartJob, marshalJob(job)); err != nil {
 			node.logger.Error(fmt.Errorf("failed to add job %q to stream %q: %w", job.Key, node.poolStream.Name, err))
 		}
